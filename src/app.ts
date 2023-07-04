@@ -1,18 +1,32 @@
 import Koa from 'koa'
 import http from 'http'
+import onerror from 'koa-onerror'
+import { koaBody } from 'koa-body'
+import KoaLogger from 'koa-logger'
+import KoaStatic from 'koa-static'
+import KoaCors from 'koa-cors'
 
 const app = new Koa()
+
+onerror(app)
+
+app.use(koaBody({
+  multipart: true
+}))
+app.use(KoaLogger())
+app.use(KoaStatic('./public'))
+app.use(KoaCors())
+
+// error-handling
+app.on('error', (err, ctx) => {
+  console.error('server error', err, ctx)
+})
 
 const serve = new http.Server(app.callback())
 const address = serve.address()
 const bind = typeof address === 'string' ? `pipe ${address}` : `port ${address?.port}`
 
-app.use(async (ctx) => {
-  ctx.body = 'Hello world'
-})
-
 serve.listen(9000)
-
 serve.on('error', (error: any) => {
   if (error.syscall !== 'listen') {
     throw error
